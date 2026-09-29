@@ -4,6 +4,7 @@ import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Pencil, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { formatCardCount } from "@/lib/board";
 import { KanbanCard } from "./kanban-card";
 import type { CardDTO, ColumnDTO } from "@/lib/graphql/types";
 
@@ -51,7 +52,7 @@ export function KanbanColumn({
     <section
       ref={setNodeRef}
       style={style}
-      aria-label={`Coluna ${column.title}, ${column.cards.length} cards`}
+      aria-label={`Coluna ${column.title}, ${formatCardCount(column.cards.length)}`}
       className={`group flex max-h-full w-72 shrink-0 flex-col rounded-xl border bg-muted/40 p-3 transition-colors sm:w-80 ${
         isOver ? "border-primary bg-primary/5" : ""
       } ${isDragging ? "opacity-50" : ""}`}
@@ -72,7 +73,7 @@ export function KanbanColumn({
           <h2 className="flex min-w-0 items-center gap-2 text-sm font-semibold">
             <span className="truncate">{column.title}</span>
             <span
-              aria-label={`${column.cards.length} cards`}
+              aria-label={formatCardCount(column.cards.length)}
               className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground"
             >
               {column.cards.length}
