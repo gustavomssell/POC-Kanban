@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { applyColumnMove, applyMove, cardMatchesFilters, countCards } from "@/lib/board";
+import {
+  applyColumnMove,
+  applyMove,
+  cardMatchesFilters,
+  columnDeleteDescription,
+  countCards,
+  formatCardCount,
+} from "@/lib/board";
 import type { CardDTO, ColumnDTO } from "@/lib/graphql/types";
 
 function card(id: string, columnId: string, order: number, extra: Partial<CardDTO> = {}): CardDTO {
@@ -142,5 +149,31 @@ describe("countCards", () => {
     ];
     expect(countCards(cols)).toBe(3);
     expect(countCards([])).toBe(0);
+  });
+});
+
+describe("formatCardCount", () => {
+  it("pluraliza corretamente 0, 1 e n", () => {
+    expect(formatCardCount(0)).toBe("0 cards");
+    expect(formatCardCount(1)).toBe("1 card");
+    expect(formatCardCount(7)).toBe("7 cards");
+  });
+});
+
+describe("columnDeleteDescription", () => {
+  it("coluna vazia não fala em excluir cards", () => {
+    expect(columnDeleteDescription("Backlog", 0)).toBe(
+      'A coluna "Backlog" não tem cards e será excluída permanentemente. Essa ação não pode ser desfeita.'
+    );
+  });
+
+  it("um card usa a forma singular", () => {
+    expect(columnDeleteDescription("To Do", 1)).toBe(
+      'A coluna "To Do" e seu único card serão excluídos permanentemente. Essa ação não pode ser desfeita.'
+    );
+  });
+
+  it("vários cards pluralizam", () => {
+    expect(columnDeleteDescription("To Do", 4)).toContain('"To Do" e seus 4 cards');
   });
 });

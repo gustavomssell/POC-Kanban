@@ -90,3 +90,19 @@ export function cardMatchesFilters(
 export function countCards(columns: ColumnDTO[]): number {
   return columns.reduce((total, col) => total + col.cards.length, 0);
 }
+
+/** Plural curto para rótulos acessíveis: "0 cards", "1 card", "2 cards". */
+export function formatCardCount(count: number): string {
+  return `${count} ${count === 1 ? "card" : "cards"}`;
+}
+
+/** Texto da confirmação de exclusão de coluna, com plural correto em pt-BR. */
+export function columnDeleteDescription(title: string, cardCount: number): string {
+  const body =
+    cardCount === 0
+      ? `A coluna "${title}" não tem cards e será excluída permanentemente`
+      : cardCount === 1
+        ? `A coluna "${title}" e seu único card serão excluídos permanentemente`
+        : `A coluna "${title}" e seus ${cardCount} cards serão excluídos permanentemente`;
+  return `${body}. Essa ação não pode ser desfeita.`;
+}

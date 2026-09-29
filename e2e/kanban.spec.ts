@@ -44,8 +44,8 @@ test.describe.serial("board kanban", () => {
     await page.getByRole("button", { name: "Carregar exemplo" }).click();
 
     await expect(page.locator('section[aria-label="Coluna To Do, 2 cards"]')).toBeVisible();
-    await expect(page.locator('section[aria-label="Coluna Doing, 1 cards"]')).toBeVisible();
-    await expect(page.locator('section[aria-label="Coluna Done, 1 cards"]')).toBeVisible();
+    await expect(page.locator('section[aria-label="Coluna Doing, 1 card"]')).toBeVisible();
+    await expect(page.locator('section[aria-label="Coluna Done, 1 card"]')).toBeVisible();
     await expect(page.getByText("Modelar schema GraphQL")).toBeVisible();
     await expect(page.getByText("Montar board com DnD")).toBeVisible();
     await expect(page.getByText("Tema dark/light")).toBeVisible();
@@ -135,7 +135,7 @@ test.describe.serial("board kanban", () => {
 
     await page.getByRole("button", { name: "Excluir coluna Backlog E2E" }).click();
     await expect(page.getByRole("heading", { name: "Excluir coluna?" })).toBeVisible();
-    await expect(dialog.getByText("0 card(s)")).toBeVisible();
+    await expect(dialog.getByText("não tem cards")).toBeVisible();
     await dialog.getByRole("button", { name: "Excluir", exact: true }).click();
 
     await expect(column(page, "Backlog E2E")).toHaveCount(0);
@@ -146,7 +146,7 @@ test.describe.serial("board kanban", () => {
 
     await page.getByLabel("Buscar cards").fill("dark");
     await expect(page.locator('section[aria-label="Coluna To Do, 0 cards"]')).toBeVisible();
-    await expect(page.locator('section[aria-label="Coluna Doing, 1 cards"]')).toBeVisible();
+    await expect(page.locator('section[aria-label="Coluna Doing, 1 card"]')).toBeVisible();
     await expect(page.getByText("Tema dark/light")).toBeVisible();
     await expect(page.getByText("Modelar schema GraphQL")).toHaveCount(0);
     await expect(page.getByText("Reordenação pausada durante o filtro")).toBeVisible();
@@ -168,7 +168,7 @@ test.describe.serial("board kanban", () => {
 
     await page.locator('[title="Filtrar por infra"]').click();
     await expect(page.locator('[title="Remover filtro infra"]')).toBeVisible();
-    await expect(page.locator('section[aria-label="Coluna Done, 1 cards"]')).toBeVisible();
+    await expect(page.locator('section[aria-label="Coluna Done, 1 card"]')).toBeVisible();
     await expect(page.locator('section[aria-label="Coluna To Do, 0 cards"]')).toBeVisible();
     await expect(page.getByText("Subir Postgres via compose")).toBeVisible();
 
@@ -184,11 +184,16 @@ test.describe.serial("board kanban", () => {
     const todo = column(page, "To Do");
     const doing = column(page, "Doing");
 
-    await drag(page, todo.getByText("Montar board com DnD"), doing);
+    // Origem = grip explícito (o Card não escuta drag — a11y: botões aninhados).
+    await drag(
+      page,
+      todo.getByRole("button", { name: "Reordenar card Montar board com DnD", exact: true }),
+      doing
+    );
 
     await expect(doing.getByText("Montar board com DnD")).toBeVisible();
     await expect(doing).toHaveAttribute("aria-label", "Coluna Doing, 2 cards");
-    await expect(todo).toHaveAttribute("aria-label", "Coluna To Do, 1 cards");
+    await expect(todo).toHaveAttribute("aria-label", "Coluna To Do, 1 card");
   });
 
   test("reordena colunas pelo grip (DnD horizontal)", async ({ page }) => {
