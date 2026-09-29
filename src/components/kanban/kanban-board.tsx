@@ -19,7 +19,7 @@ import {
 } from "@dnd-kit/sortable";
 import { SearchX } from "lucide-react";
 import { useBoard } from "@/hooks/use-board";
-import { countCards } from "@/lib/board";
+import { columnDeleteDescription, countCards } from "@/lib/board";
 import type { CardDTO, ColumnDTO } from "@/lib/graphql/types";
 import { Button } from "@/components/ui/button";
 import { BoardEmpty, BoardError, BoardSkeleton } from "./board-states";
@@ -282,7 +282,10 @@ export function KanbanBoard() {
           description={
             pendingDelete.type === "card"
               ? `"${pendingDelete.card.title}" será removido permanentemente. Essa ação não pode ser desfeita.`
-              : `A coluna "${pendingDelete.column.title}" e seus ${pendingDelete.column.cards.length} card(s) serão excluídos permanentemente. Essa ação não pode ser desfeita.`
+              : columnDeleteDescription(
+                  pendingDelete.column.title,
+                  pendingDelete.column.cards.length
+                )
           }
           onConfirm={async () => {
             if (pendingDelete.type === "card") {

@@ -2,7 +2,7 @@
 
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Pencil, Trash2 } from "lucide-react";
+import { GripVertical, Pencil, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -17,11 +17,12 @@ type Props = {
 };
 
 export function KanbanCard({ card, draggable, onEdit, onDelete }: Props) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: card.id,
-    data: { type: "card", card },
-    disabled: !draggable,
-  });
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
+    useSortable({
+      id: card.id,
+      data: { type: "card", card },
+      disabled: !draggable,
+    });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -30,23 +31,30 @@ export function KanbanCard({ card, draggable, onEdit, onDelete }: Props) {
   };
 
   return (
-    <Card
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className={`group touch-manipulation transition-shadow hover:shadow-md ${
-        draggable ? "cursor-grab active:cursor-grabbing" : "cursor-default"
-      }`}
-    >
+    <Card ref={setNodeRef} style={style} className="group transition-shadow hover:shadow-md">
       <CardContent className="space-y-2 p-3">
         <div className="flex items-start justify-between gap-2">
-          <p className="text-sm font-medium leading-snug">{card.title}</p>
+          <div className="flex min-w-0 items-start gap-1">
+            {/* Grip explícito: ouvir drag no Card inteiro exigiria role=button
+                com botões aninhados dentro — inválido para a11y (e gera nome
+                acessível com os rótulos internos embaralhados). */}
+            <button
+              type="button"
+              ref={setActivatorNodeRef}
+              {...attributes}
+              {...listeners}
+              aria-label={`Reordenar card ${card.title}`}
+              title="Reordenar"
+              className={`touch-none rounded p-0.5 text-muted-foreground hover:text-foreground ${
+                draggable ? "cursor-grab active:cursor-grabbing" : "cursor-default"
+              }`}
+            >
+              <GripVertical className="h-3.5 w-3.5" />
+            </button>
+            <p className="text-sm font-medium leading-snug">{card.title}</p>
+          </div>
           {/* Ações visíveis no hover (desktop) e sempre acessíveis via foco/toque */}
-          <div
-            className="flex shrink-0 gap-0.5 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
-            onPointerDown={(e) => e.stopPropagation()}
-          >
+          <div className="flex shrink-0 gap-0.5 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
             <Button
               variant="ghost"
               size="icon"

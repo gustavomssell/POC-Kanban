@@ -79,7 +79,7 @@ export const resolvers: any = {
         data: { title, order: count },
       });
     },
-    renameColumn: (_: unknown, args: { id: string; title: string }) =>
+    renameColumn: async (_: unknown, args: { id: string; title: string }) =>
       prisma.column.update({
         where: { id: args.id },
         data: { title: requireTitle(args.title) },
@@ -136,7 +136,7 @@ export const resolvers: any = {
       });
     },
     // Atualiza conteúdo (título/descrição/labels). Posição é papel do `moveCard`.
-    updateCard: (
+    updateCard: async (
       _: unknown,
       args: {
         id: string;

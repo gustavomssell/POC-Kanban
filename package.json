@@ -7,6 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:setup": "node scripts/test-db-setup.mjs",
+    "pretest": "node scripts/test-db-setup.mjs",
+    "test:e2e": "playwright test",
+    "test:e2e:serve": "node scripts/test-db-setup.mjs && next build && next start -p 3100",
     "db:up": "docker compose up -d db",
     "db:down": "docker compose down",
     "prisma:migrate": "prisma migrate dev",
@@ -36,14 +42,16 @@
     "tailwind-merge": "^3.7.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
+    "@types/node": "^24.19.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.7",
     "prisma": "^6.19.3",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^5.0.2"
   }
 }
