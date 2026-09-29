@@ -1,0 +1,128 @@
+# POC KanbanQL
+
+POC de Kanban completo: **Next.js 16 (App Router) + GraphQL integrada + Postgres**, frontend em **Tailwind v4 + shadcn** com tema **dark/light**, drag-and-drop com `@dnd-kit`.
+
+> **Escopo da POC:** validar um board Kanban real (DnD, CRUD completo, filtros) com GraphQL servindo direto do Next.js — sem backend separado. **Fora de escopo:** auth, realtime/subscriptions, multi-tenant.
+
+## Stack
+
+| Camada | Tecnologia |
+| --- | --- |
+| Frontend | Next.js 16 (App Router) · React 19 · TypeScript |
+| Estilo | Tailwind CSS v4 · shadcn/ui (new-york, neutral) · Radix · lucide-react |
+| GraphQL | `graphql-yoga` + `@graphql-tools/schema` em `/api/graphql` (Route Handler) |
+| Client | Apollo Client v4 (`@apollo/client/react`) |
+| Dados | PostgreSQL 16 (Docker Compose, porta **5437**) + Prisma 6 |
+| DnD | `@dnd-kit/core` + `@dnd-kit/sortable` (mouse e teclado) |
+| Tema/UX | `next-themes` · `sonner` (toasts) |
+
+## Início rápido
+
+Pré-requisitos: Node 24+ e Docker em execução.
+
+```bash
+npm install             # inclui prisma generate (postinstall)
+cp .env.example .env    # DATABASE_URL aponta para localhost:5437
+npm run db:up           # sobe Postgres (5432/5433 ocupados na máquina)
+npm run prisma:migrate  # cria as tabelas
+npm run dev             # http://localhost:3000
+```
+
+- **GraphiQL:** http://localhost:3000/api/graphql
+- **Board vazio:** o estado inicial oferece **“Carregar dados exemplo”** (mutation `seed`).
+
+## Scripts
+
+| Script | O que faz |
+| --- | --- |
+| `npm run dev` / `build` / `start` / `lint` | Dev server · build de produção · server prod · ESLint |
+| `npm run db:up` / `db:down` | Sobe/derruba o Postgres via Docker Compose |
+| `npm run prisma:migrate` | `prisma migrate dev` (cria/aplica migrations) |
+| `npm run prisma:studio` / `prisma:generate` | GUI do banco · regenera o client |
+
+## Funcionalidades
+
+- Board com colunas ilimitadas: **criar, renomear (grip), excluir** (com confirmação) e **reordenar colunas** via drag no grip
+- Cards: **criar, editar, excluir** (título, descrição, labels) — DnD entre colunas e reordenação (mouse + teclado)
+- **Validação em 2 camadas:** dialogs no cliente + `requireTitle`/`normalizeLabels` no servidor (GraphiQL incluído)
+- **Busca com debounce + filtro por labels** (server-side); durante filtro a reordenação fica pausada (`reorderLocked`) para o índice do drop não divergir do servidor
+- Card salvo que ficaria **escondido pelo filtro** limpa os filtros automaticamente
+- UX: skeleton sem flicker (`previousData`), banner “nenhum card corresponde aos filtros”, empty/error states, toasts, tema dark/light
+- Otimismo em movimentos (`moveCard`/`moveColumn`) — aplica localmente e confirma com refetch
+
+## Arquitetura
+
+```
+componentes (kanban/*)  ──ações──▶  use-board (hook único de dados)
+                                       │  filtros: search debounced + labels
+                                       │  otimismo: applyMove / applyColumnMove
+                                       ▼
+                              Apollo Client (cache-and-network)
+                                       │  POST /api/graphql
+                                       ▼
+                        graphql-yoga ─▶ resolvers ─▶ Prisma ─▶ Postgres
+```
+
+Decisões que valem destacar:
+
+- **`use-board` é a única fonte de dados** — componentes nunca chamam Apollo diretamente.
+- **Otimismo espelha o servidor:** `applyMove`/`applyColumnMove` em `src/lib/board.ts` executam o mesmo algoritmo dos resolvers; a otimização é limpa por identidade (`prev === next`) após o refetch.
+- **Filtros vivem nas variáveis da query** — trocar filtro muda as variáveis; `previousData` mantém o dado anterior na tela (sem skeleton piscando) e erro só substitui o board quando não há nenhum dado.
+- **GraphQL integrada:** um único Route Handler serve API + GraphiQL, sem processo separado.
+
+## API GraphQL
+
+**Modelo**
+
+- `Column { id, title, order, cards(search, labels) }`
+- `Card { id, title, description, order, labels[], columnId, createdAt, updatedAt }`
+
+**Queries:** `columns` · `cards(search, labels)` · `card(id)` · `labels`
+**Mutations:** `createColumn` · `renameColumn` · `moveColumn` · `deleteColumn` · `createCard` · `updateCard` · `moveCard` · `deleteCard` · `seed`
+
+## Estrutura do projeto
+
+```
+src/
+├── app/
+│   ├── page.tsx              # shell da página (h-dvh)
+│   ├── error.tsx             # error boundary da rota
+│   └── api/graphql/route.ts  # graphql-yoga (POST/GET/OPTIONS)
+├── components/
+│   ├── kanban/               # board, coluna, card, dialogs, toolbar, estados
+│   └── ui/                   # primitivos shadcn (button, dialog, input…)
+├── hooks/
+│   ├── use-board.ts          # dados + mutations + filtros (fonte única)
+│   └── use-debounce.ts
+└── lib/
+    ├── board.ts              # regras de movimento/filtro (puras)
+    ├── graphql/              # schema, resolvers, operations, types
+    ├── prisma.ts
+    └── apollo-client.ts
+prisma/                       # schema.prisma + migrations
+docker-compose.yml            # Postgres na porta 5437
+.github/workflows/ci.yml      # lint + tsc + build
+```
+
+## Validação
+
+Antes de qualquer commit:
+
+```bash
+npx tsc --noEmit   # tipos
+npm run lint       # ESLint
+npm run build      # build de produção
+```
+
+O CI (`.github/workflows/ci.yml`) roda os mesmos três passos.
+
+## Git flow
+
+- `main` — estado validado (release)
+- `develop` — integração
+- `feature/*` — branches de feature a partir de `develop`, merge com `--no-ff`
+- Mensagens em [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `docs:`, `chore:`)
+
+## Contexto para agentes
+
+`AGENTS.md` contém comandos, convenções e gotchas do projeto (o bloco de regras do Next.js é gerenciado por `next dev`). `CLAUDE.md` apenas o importa (`@AGENTS.md`).
