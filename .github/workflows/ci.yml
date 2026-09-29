@@ -2,12 +2,13 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     services:
       postgres:
         image: postgres:16-alpine
@@ -23,12 +24,21 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
-      - run: npm ci
+      # Retry: o npm ci do runner já falhou em ~2s (flake de registry, sem
+      # mensagem aproveitável no artefato) — 3 tentativas cobrem o transitório.
+      - name: npm ci
+        run: |
+          for i in 1 2 3; do
+            npm ci --no-audit --no-fund && exit 0
+            echo "npm ci falhou (tentativa $i/3)" >&2
+            sleep 15
+          done
+          exit 1
       - run: npx prisma generate
       - run: npm run lint
       - run: npx tsc --noEmit
@@ -39,6 +49,7 @@ jobs:
 
   e2e:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     services:
       postgres:
         image: postgres:16-alpine
@@ -54,12 +65,19 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
-      - run: npm ci
+      - name: npm ci
+        run: |
+          for i in 1 2 3; do
+            npm ci --no-audit --no-fund && exit 0
+            echo "npm ci falhou (tentativa $i/3)" >&2
+            sleep 15
+          done
+          exit 1
       - run: npx prisma generate
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
