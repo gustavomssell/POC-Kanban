@@ -36,6 +36,8 @@ npm run dev             # http://localhost:3000
 | Script | O que faz |
 | --- | --- |
 | `npm run dev` / `build` / `start` / `lint` | Dev server · build de produção · server prod · ESLint |
+| `npm test` / `test:watch` | Vitest: unit + integração (`pretest` recria o banco de teste) |
+| `npm run test:setup` | Só prepara o banco de teste (`kanbanql_test`) |
 | `npm run db:up` / `db:down` | Sobe/derruba o Postgres via Docker Compose |
 | `npm run prisma:migrate` | `prisma migrate dev` (cria/aplica migrations) |
 | `npm run prisma:studio` / `prisma:generate` | GUI do banco · regenera o client |
@@ -104,6 +106,17 @@ docker-compose.yml            # Postgres na porta 5437
 .github/workflows/ci.yml      # lint + tsc + build
 ```
 
+## Testes (QA)
+
+```bash
+npm test        # unit + integração (~2 s); roda test:setup antes (hook pretest)
+```
+
+- **Unitários** (`src/lib/board.test.ts`): `applyMove`/`applyColumnMove` (mesmo algoritmo dos resolvers), `cardMatchesFilters`, `countCards`.
+- **Integração** (`src/lib/graphql/resolvers.test.ts`): resolvers chamados direto contra o Postgres — validação de título, normalização de labels, CRUD de colunas, `moveCard`/`moveColumn`, busca/labels e cascade do `deleteColumn`.
+- **Isolamento:** os testes rodam sempre em `kanbanql_test` (recriada a cada `npm test`); `vitest.setup.ts` trava o `DATABASE_URL` antes de qualquer import — o banco de dev (`kanbanql`) nunca é tocado.
+- O CI roda `npm test` com um serviço Postgres.
+
 ## Validação
 
 Antes de qualquer commit:
@@ -111,10 +124,11 @@ Antes de qualquer commit:
 ```bash
 npx tsc --noEmit   # tipos
 npm run lint       # ESLint
+npm test           # unit + integração
 npm run build      # build de produção
 ```
 
-O CI (`.github/workflows/ci.yml`) roda os mesmos três passos.
+O CI (`.github/workflows/ci.yml`) roda os mesmos passos.
 
 ## Git flow
 
