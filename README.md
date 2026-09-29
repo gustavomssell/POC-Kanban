@@ -37,6 +37,7 @@ npm run dev             # http://localhost:3000
 | --- | --- |
 | `npm run dev` / `build` / `start` / `lint` | Dev server · build de produção · server prod · ESLint |
 | `npm test` / `test:watch` | Vitest: unit + integração (`pretest` recria o banco de teste) |
+| `npm run test:e2e` | Playwright E2E: server próprio na porta 3100 com `kanbanql_test` |
 | `npm run test:setup` | Só prepara o banco de teste (`kanbanql_test`) |
 | `npm run db:up` / `db:down` | Sobe/derruba o Postgres via Docker Compose |
 | `npm run prisma:migrate` | `prisma migrate dev` (cria/aplica migrations) |
@@ -117,6 +118,17 @@ npm test        # unit + integração (~2 s); roda test:setup antes (hook pretes
 - **Isolamento:** os testes rodam sempre em `kanbanql_test` (recriada a cada `npm test`); `vitest.setup.ts` trava o `DATABASE_URL` antes de qualquer import — o banco de dev (`kanbanql`) nunca é tocado.
 - O CI roda `npm test` com um serviço Postgres.
 
+### E2E (Playwright)
+
+```bash
+npm run test:e2e   # 8 testes em ~1,5 min (inclui build de produção)
+```
+
+- `e2e/kanban.spec.ts` (serial): seed do board vazio, tema dark/light, CRUD de card e coluna com validação de formulário, busca com banner "nenhum resultado", filtro por label e DnD (card entre colunas + reordenação de colunas pelo grip).
+- **Isolamento:** o `webServer` do Playwright sobe `next build` + `next start` na porta **3100** com `DATABASE_URL` do `kanbanql_test` e recria o banco a cada run — o dev server na 3000 pode continuar rodando em paralelo.
+- Cada run refaz o build (~40 s a mais). Unit (`npm test`) e E2E compartilham o banco de teste: não rode os dois ao mesmo tempo.
+- Gravações de falha: `npx playwright show-trace test-results/...` (trace + screenshot sob `test-results/`, ignorados pelo git).
+
 ## Validação
 
 Antes de qualquer commit:
@@ -126,6 +138,7 @@ npx tsc --noEmit   # tipos
 npm run lint       # ESLint
 npm test           # unit + integração
 npm run build      # build de produção
+npm run test:e2e   # E2E (obrigatório quando muda código de UI)
 ```
 
 O CI (`.github/workflows/ci.yml`) roda os mesmos passos.

@@ -21,6 +21,7 @@ POC de board Kanban com GraphQL integrada ao Next.js. Escopo validado: DnD compl
 | Dev server (porta 3000) | `npm run dev` |
 | **Validação antes de commit** | `npx tsc --noEmit && npm run lint && npm test && npm run build` |
 | Testes (Vitest) | `npm test` (hook `pretest` recria o banco de teste) · `npm run test:watch` |
+| Testes E2E (Playwright) | `npm run test:e2e` (porta 3100, `kanbanql_test`, build incluso; ver `e2e/kanban.spec.ts`) |
 | Subir/derrubar Postgres | `npm run db:up` / `npm run db:down` |
 | Migrations | `npm run prisma:migrate` |
 | Smoke test GraphQL | `POST http://localhost:3000/api/graphql` com body `{"query":"…"}` |
@@ -51,6 +52,7 @@ GraphiQL: http://localhost:3000/api/graphql
 
 - **Porta do Postgres é 5437** (5432/5433 ocupados na máquina) — `docker-compose.yml` e `.env`.
 - **Testes usam `kanbanql_test`**, nunca o banco de dev: `vitest.setup.ts` trava o `DATABASE_URL` antes de qualquer import e o `pretest` recria/migra o banco. Ao adicionar teste, respeitar esse isolamento (não setar DATABASE_URL dentro de teste).
+- **E2E usa a porta 3100** (`playwright.config.ts` → `test:e2e:serve` = reset do banco + `next build` + `next start`), com `DATABASE_URL` do `kanbanql_test` via env do webServer — pode rodar junto do dev na 3000 (`next start` não disputa `.next/dev`; um segundo `next dev` no mesmo diretório seria barrado). Unit e E2E compartilham o banco de teste: nunca rode os dois ao mesmo tempo.
 - `dev.log` e `.env` são ignorados; `.env.example` é versionado (un-ignore `!.env.example` já no `.gitignore`).
 - ESLint `react-hooks` novo reprova `setState` síncrono em efeito — usar `useSyncExternalStore` (ver `ThemeToggle`).
 - Apollo Client v4: hooks vêm de `@apollo/client/react`, `gql` da raiz de `@apollo/client`.

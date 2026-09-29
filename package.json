@@ -11,6 +11,8 @@
     "test:watch": "vitest",
     "test:setup": "node scripts/test-db-setup.mjs",
     "pretest": "node scripts/test-db-setup.mjs",
+    "test:e2e": "playwright test",
+    "test:e2e:serve": "node scripts/test-db-setup.mjs && next build && next start -p 3100",
     "db:up": "docker compose up -d db",
     "db:down": "docker compose down",
     "prisma:migrate": "prisma migrate dev",
@@ -40,6 +42,7 @@
     "tailwind-merge": "^3.7.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^24.19.0",
     "@types/react": "^19",
