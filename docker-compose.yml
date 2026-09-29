@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: kanban
+      POSTGRES_PASSWORD: kanban
+      POSTGRES_DB: kanbanql
+    ports:
+      - "5437:5432"
+    volumes:
+      - kanban-pgdata:/var/lib/postgresql/data
+
+volumes:
+  kanban-pgdata:
